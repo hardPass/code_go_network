@@ -1,0 +1,17 @@
+package main
+
+import "bytes"
+
+func main() {
+  //var buffer bytes.Buffer
+
+	// buffer := bytes.NewBuffer(make([]byte, 1000))
+
+	buffer := bytes.NewBuffer(make([]byte, 0, 100000))
+
+	for i := 0; i < 10; i++ {
+		buffer.WriteString("a")
+	}
+
+	println("[", buffer.String(), "]")
+}
