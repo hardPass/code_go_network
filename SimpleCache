@@ -1,0 +1,102 @@
+package main
+
+import (
+  "fmt"
+	"strconv"
+	"sync"
+	"time"
+)
+
+func main() {
+	cache := NewCache(12)
+	cache.Put("a", "Hi a")
+
+	fmt.Println(time.Now().Unix(), "++before bat put: ", len(cache.data))
+	for i := 0; i < 10000000; i++ {
+
+		cache.Put("a"+strconv.Itoa(i), "Hi a"+strconv.Itoa(i))
+	}
+
+	fmt.Println(time.Now().Unix(), "++after bat put: ", len(cache.data))
+
+	time.Sleep(2 * time.Second)
+
+	fmt.Println(time.Now().Unix(), "cache.Get(\"a1111\"): ", cache.Get("a1111"), len(cache.data))
+	time.Sleep(2 * time.Second)
+
+	go func() {
+		fmt.Println(time.Now().Unix(), "--before gc: ", len(cache.data))
+		cache.Gc(6)
+		fmt.Println(time.Now().Unix(), "--after gc:  ", len(cache.data))
+
+	}()
+
+	time.Sleep(8 * time.Second)
+	fmt.Println(time.Now().Unix(), "cache.Get(\"a1111\"): ", cache.Get("a1111"), len(cache.data))
+
+}
+
+type Entry struct {
+	Value        interface{}
+	TimeAccessed time.Time
+}
+
+type Cache struct {
+	sync.RWMutex
+	data map[string]*Entry
+}
+
+func NewCache(initCapacity int) *Cache {
+
+	return &Cache{
+		data: make(map[string]*Entry, initCapacity),
+	}
+}
+
+func (this *Cache) Put(key string, value interface{}) error {
+	this.Lock()
+	defer this.Unlock()
+
+	if entry, ok := this.data[key]; ok {
+		entry.Value = value
+		entry.TimeAccessed = time.Now()
+
+	} else {
+		this.data[key] = &Entry{Value: value, TimeAccessed: time.Now()}
+	}
+	return nil
+}
+
+func (this *Cache) Get(key string) interface{} {
+	this.RLock()
+	defer this.RUnlock()
+
+	if entry, ok := this.data[key]; ok {
+		entry.TimeAccessed = time.Now()
+		return entry.Value
+	}
+
+	return nil
+}
+
+func (this *Cache) Delete(key string) error {
+	this.Lock()
+	defer this.Unlock()
+
+	delete(this.data, key)
+
+	return nil
+}
+
+// seconds
+func (this *Cache) Gc(maxlifetime int64) {
+	this.Lock()
+	defer this.Unlock()
+
+	for key, entry := range this.data {
+		if (entry.TimeAccessed.Unix() + maxlifetime) < time.Now().Unix() {
+			delete(this.data, key)
+		}
+	}
+
+}
