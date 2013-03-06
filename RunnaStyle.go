@@ -1,7 +1,7 @@
 package main
 
 import (
-  "fmt"
+	"fmt"
 	"sync/atomic"
 	"time"
 )
@@ -87,7 +87,7 @@ func main() {
 	})
 
 	c := make(chan (int))
-	time.AfterFunc(10*time.Second, func() {
+	time.AfterFunc(8*time.Second, func() {
 		t.r.ShutDown()
 		fmt.Println("ShutDown")
 		c <- 1
