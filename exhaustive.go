@@ -1,8 +1,10 @@
 package main
 
 import (
-  "fmt"
+	"fmt"
 )
+
+// 打印 A B C D 所有排列组合
 
 func main() {
 	count := 0
