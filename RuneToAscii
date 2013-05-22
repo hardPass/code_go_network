@@ -1,0 +1,25 @@
+package main
+
+import (
+  "fmt"
+	"strconv"
+)
+
+func RuneToAscii(r rune) string {
+	if r < 128 {
+		return string(r)
+	} else {
+		return "\\u" + strconv.FormatInt(int64(r), 16)
+	}
+}
+
+func main() {
+	rawStr := "a世界"
+	fmt.Println("rawStr:", rawStr )
+	rs := []rune(rawStr)
+	result := ""
+	for _, r := range rs {
+		result += RuneToAscii(r)
+	}
+	fmt.Printf("result: %s\n", result)
+}
