@@ -11,9 +11,8 @@ import (
 
 var (
 	flag int64 = 0
-	rw   sync.RWMutex
-
-	c = make(chan string)
+	wg         = new(sync.WaitGroup)
+	c          = make(chan string)
 )
 
 func Recv(n int) {
@@ -33,34 +32,23 @@ func Recv(n int) {
 }
 
 func Send(n int) {
+	defer wg.Done()
+
 	for i := 0; ; i++ {
 		if atomic.LoadInt64(&flag) == 1 {
 			fmt.Println("Sender ", n, " left.")
 			return
 		}
 		time.Sleep(time.Millisecond * 100)
-		// MustSend("<data " + strconv.Itoa(i) + "> from Sender" + strconv.Itoa(n))
-
-		c <- "<data " + strconv.Itoa(i) + "> from Sender" + strconv.Itoa(n)
-	}
-
-}
-
-func MustSend(data string) {
-	rw.RLock()
-	defer rw.RUnlock()
-
-	if atomic.LoadInt64(&flag) == 0 {
+		data := "<data " + strconv.Itoa(i) + "> from Sender" + strconv.Itoa(n)
 		c <- data
 	}
 
 }
 
 func Close() {
-	rw.Lock()
-	defer rw.Unlock()
-
 	atomic.CompareAndSwapInt64(&flag, 0, 1)
+	wg.Wait()
 	close(c)
 }
 
@@ -72,8 +60,11 @@ func main() {
 	go Recv(2)
 	go Recv(3)
 
+	wg.Add(1)
 	go Send(1)
+	wg.Add(1)
 	go Send(2)
+	wg.Add(1)
 	go Send(3)
 
 	time.Sleep(time.Millisecond * 1000)
