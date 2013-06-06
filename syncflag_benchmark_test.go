@@ -1,8 +1,9 @@
 package syncflag
 
 import (
-  "container/list"
-	"log"
+	"container/list"
+	// "log"
+	"sync"
 	"sync/atomic"
 	"testing"
 )
@@ -25,7 +26,7 @@ func BenchmarkFlagByChanInit(b *testing.B) {
 		clients.PushBack(c)
 		close(c.validChan)
 	}
-	log.Println("clients.Len():", clients.Len())
+	// log.Println("clients.Len():", clients.Len())
 }
 
 func BenchmarkFlagByChanCheck(b *testing.B) {
@@ -39,21 +40,27 @@ func BenchmarkFlagByChanCheck(b *testing.B) {
 		close(c.validChan)
 	}
 
-	go func() {
-		b.StartTimer()
-		count := 0
+	b.StartTimer()
+	wg := &sync.WaitGroup{}
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			count := 0
 
-		e := clients.Front()
-		for e != nil {
-			c := e.Value.(*Client)
-			_, ok := <-c.validChan
-			if !ok {
-				count++
+			e := clients.Front()
+			for e != nil {
+				c := e.Value.(*Client)
+				_, ok := <-c.validChan
+				if !ok {
+					count++
+				}
+				e = e.Next()
 			}
-			e = e.Next()
-		}
-		log.Println("count:", count)
-	}()
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
 }
 
 func BenchmarkFlagByAtomicInit(b *testing.B) {
@@ -66,7 +73,7 @@ func BenchmarkFlagByAtomicInit(b *testing.B) {
 		clients.PushBack(c)
 		atomic.CompareAndSwapInt32(&c.valid, 0, 1)
 	}
-	log.Println("clients.Len():", clients.Len())
+	// log.Println("clients.Len():", clients.Len())
 }
 
 func BenchmarkFlagByAtomicCheck(b *testing.B) {
@@ -80,19 +87,27 @@ func BenchmarkFlagByAtomicCheck(b *testing.B) {
 		atomic.CompareAndSwapInt32(&c.valid, 0, 1)
 	}
 
-	go func() {
-		b.StartTimer()
-		count := 0
+	b.StartTimer()
+	wg := &sync.WaitGroup{}
 
-		e := clients.Front()
-		for e != nil {
-			c := e.Value.(*Client)
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			count := 0
 
-			if atomic.LoadInt32(&c.valid) == 1 {
-				count++
+			e := clients.Front()
+			for e != nil {
+				c := e.Value.(*Client)
+
+				if atomic.LoadInt32(&c.valid) == 1 {
+					count++
+				}
+				e = e.Next()
 			}
-			e = e.Next()
-		}
-		log.Println("count:", count)
-	}()
+			wg.Done()
+		}()
+
+	}
+
+	wg.Wait()
 }
