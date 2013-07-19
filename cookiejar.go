@@ -105,8 +105,16 @@ func main() {
 	}
 	fmt.Printf("verify code : %s \n", code)
 
-	addr := "http://www.xxoo.com/view11.asp?cllx=02&car_number=%B4%A8A597Q3&car_cj=443364&vcode=" + code + "&Submit=%B2%E9%D1%AF"
-	req, err := http.NewRequest("GET", addr, nil)
+	// addr := "http://www.xxoo.com/view11.asp?cllx=02&car_number=%B4%A8A597Q3&car_cj=443364&vcode=" + code + "&Submit=%B2%E9%D1%AF"
+	// req, err := http.NewRequest("GET", addr, nil)
+	// or use POST thing bellow:
+	body := url.Values{
+		"cllx":       {"02"},
+		"car_number": {"dkd123"},
+		"vcode":      {code},
+	}
+	addr := "http://www.xxoo.com/view11.asp"
+	req, err := http.NewRequest("POST", addr, strings.NewReader(body.Encode()))
 	if err != nil {
 		return
 	}
