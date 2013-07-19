@@ -33,7 +33,7 @@ func (jar *Jar) Cookies(u *url.URL) []*http.Cookie {
 }
 
 func verifycode(client *http.Client) (string, error) {
-	addr := "http://www.cdjg.gov.cn/codetest.asp"
+	addr := "http://www.xxoo.com/codetest.asp"
 	req, err := http.NewRequest("GET", addr, nil)
 	if err != nil {
 		return "", err
