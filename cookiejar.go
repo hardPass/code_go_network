@@ -1,7 +1,9 @@
 package main
 
 import (
-  "fmt"
+	"code.google.com/p/mahonia"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sync"
@@ -38,7 +40,9 @@ func verifycode(client *http.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	req.Header.Set("User-Agent", user_agent)
+	req.Header.Set("Referer", "http://www.xxoo.com/")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -59,8 +63,41 @@ func verifycode(client *http.Client) (string, error) {
 	return "", nil
 }
 
+func index(client *http.Client) {
+	addr := "http://www.xxoo.com"
+	req, err := http.NewRequest("GET", addr, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Set("User-Agent", user_agent)
+	req.Header.Set("Referer", "http://www.xxoo.com/")
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
+
+}
+
 func main() {
-	client := &http.Client{nil, nil, NewJar()}
+	proxy, err := url.Parse("http://127.0.0.1:8888") // for fiddler
+	if err != nil {
+		return
+	}
+
+	client := &http.Client{
+		&http.Transport{
+			Proxy: http.ProxyURL(proxy),
+			// NO timeout
+			// NO deadline
+			// just a shit of test
+		},
+		nil,
+		NewJar(),
+	}
+
+	// index(client)
+	// client = &http.Client{nil, nil, NewJar()}
 	code, err := verifycode(client)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
@@ -68,4 +105,22 @@ func main() {
 	}
 	fmt.Printf("verify code : %s \n", code)
 
+	addr := "http://www.xxoo.com/view11.asp?cllx=02&car_number=%B4%A8A597Q3&car_cj=443364&vcode=" + code + "&Submit=%B2%E9%D1%AF"
+	req, err := http.NewRequest("GET", addr, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Set("User-Agent", user_agent)
+	req.Header.Set("Referer", "http://www.xxoo.com/")
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	decoder := mahonia.NewDecoder("GBK")
+	fmt.Printf("%s", decoder.ConvertString(string(b)))
 }
