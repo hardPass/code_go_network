@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Config>
+  <welcome>welcome to use gateway controller!</welcome>
+
+	<Service name="anyService" class="com.xxoo.any.Service">
+		<Receiver>
+			<Path>
+				<In>messages_ca/sign/in</In>
+				<Tmp>messages_ca/sign/in_tmp</Tmp>
+			</Path>
+			<Interval>2</Interval>
+			<Max>100</Max>
+		</Receiver>
+		<Concurrent>4</Concurrent>
+	</Service>
+</Config>
