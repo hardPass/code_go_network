@@ -24,11 +24,11 @@ func NewBitmap() *Bitmap {
 }
 
 func (bm *Bitmap) idx_of_ints(momoid uint32) uint32 {
-	return momoid >> bm.Shift
+	return momoid >> bm.Shift // momoid / 32
 }
 
 func (bm *Bitmap) valueByOffset(momoid uint32) uint32 {
-	return 1 << (momoid & bm.Mask)
+	return 1 << (momoid & bm.Mask) // 1 << ( momoid % 32 )
 }
 
 func (bm *Bitmap) Put(momoid uint32) {
