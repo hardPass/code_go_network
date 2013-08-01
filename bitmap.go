@@ -1,14 +1,15 @@
 package main
 
 import (
-  "fmt"
+	"fmt"
 )
 
 type Bitmap struct {
 	Shift uint32
 	Mask  uint32
+	Max   uint32
 
-	data []uint32
+	Data []uint32
 }
 
 func NewBitmap() *Bitmap {
@@ -16,35 +17,48 @@ func NewBitmap() *Bitmap {
 		Shift: 5,
 		Mask:  0x1F,
 	}
-	bm.data = make([]uint32, 16)
-	// bm.data = make([]uint32, 1<<10)
+	// bm.Data = make([]uint32, 16)
+	bm.Data = make([]uint32, 1<<29)
 
 	return bm
 }
 
-func (bm *Bitmap) Put(momoid uint32) {
-	idx := momoid >> bm.Shift
+func (bm *Bitmap) idx_of_ints(momoid uint32) uint32 {
+	return momoid >> bm.Shift
+}
 
-	if oldSize := len(bm.data); int(idx) >= oldSize {
-		tmp := make([]uint32, oldSize<<1)
-		for i := 0; i < oldSize; i++ {
-			tmp[i] = bm.data[i]
-		}
-		bm.data = tmp
+func (bm *Bitmap) valueByOffset(momoid uint32) uint32 {
+	return 1 << (momoid & bm.Mask)
+}
+
+func (bm *Bitmap) Put(momoid uint32) {
+	if momoid > bm.Max {
+		bm.Max = momoid
 	}
 
-	bm.data[idx] |= (1 << (momoid & bm.Mask))
+	idx := bm.idx_of_ints(momoid)
+
+	if oldSize := len(bm.Data); int(idx) >= oldSize {
+		tmp := make([]uint32, idx+32)
+		for i := 0; i < oldSize; i++ {
+			tmp[i] = bm.Data[i]
+		}
+		bm.Data = tmp
+	}
+
+	v := bm.valueByOffset(momoid)
+	bm.Data[idx] |= v
 }
 
 func (bm *Bitmap) Contains(momoid uint32) bool {
-	idx := momoid >> bm.Shift
-	if int(idx) >= len(bm.data) {
+	idx := bm.idx_of_ints(momoid)
+	if int(idx) >= len(bm.Data) {
 		return false
 	}
 
-	n := uint32(1 << (momoid & bm.Mask))
+	v := bm.valueByOffset(momoid)
 
-	return bm.data[idx]&n == n
+	return bm.Data[idx]&v == v
 }
 
 func main() {
