@@ -18,7 +18,7 @@ func NewBitmap() *Bitmap {
 		Mask:  0x1F,
 	}
 	// bm.Data = make([]uint32, 16)
-	bm.Data = make([]uint32, 1<<29)
+	bm.Data = make([]uint32, 1<<26)
 
 	return bm
 }
