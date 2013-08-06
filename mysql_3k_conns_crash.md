@@ -1,11 +1,12 @@
 mysql 3000并发直接整个服务器挂掉
 限制连接次数类似这样：
 
-  n:=make(chan bool,100)
+	n := make(chan bool,100)
+	
 	func{
-	n<-true
-	do sql
-	<-true
+		n<-true
+		do sql
+		<-true
 	}
 
 限制他最大的并发数
