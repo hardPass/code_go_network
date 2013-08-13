@@ -1,41 +1,66 @@
-package mvc
+package main
 
 import (
-  "log"
+	"log"
 )
 
-type Filter interface {
-	DoFilter(*Context, *FilterChain) error
+type Context struct {
+	name string
+	// and other properties
 }
 
 type FilterChain struct {
 	idx      int
 	filters  []Filter
-	endpoint func(*Context) error
+	endpoint func(*Context)
 }
 
-func NewFilterChain(filters []Filter, endpoint func(*Context) error) {
+func NewFilterChain(filters []Filter, endpoint func(*Context)) *FilterChain {
 	return &FilterChain{-1, filters, endpoint}
 }
 
-func (chain *FilterChain) DoFilter(ctx *Context) error {
+func (chain *FilterChain) DoFilter(ctx *Context) {
 	chain.idx++
-	if chain.idex >= len(chain.filters) {
-		return chain.endpoint(*Context)
+	if chain.idx >= len(chain.filters) {
+		chain.endpoint(ctx)
+		return
 	}
 
-	err := chain.filters[chain.idx].DoFilter(ctx, chain)
-	if err != nil {
-		return err
-	}
+	chain.filters[chain.idx].DoFilter(ctx, chain)
+}
+
+type Filter interface {
+	DoFilter(*Context, *FilterChain)
 }
 
 type LogFilter struct{ seq int }
 
-func (f *LogFilter) DoFilter(ctx *Context, chain *FilterChain) error {
-	log.Println("before chain.DoFilter(ctx) ", f.seq)
+func (f *LogFilter) DoFilter(ctx *Context, chain *FilterChain) {
+	log.Println(" inbound filter", f.seq)
 	// TODO dofilter request
-	chain.DoFilter(ctx)
+	if f.seq == 33 { // for test
+		log.Println("+++++++++++++ breaking return ", f.seq)
+	} else {
+		chain.DoFilter(ctx)
+	}
+
 	// TODO dofilter respone
-	log.Println("after chain.DoFilter(ctx) ", f.seq)
+	log.Println("outbound filter", f.seq)
+}
+
+func main() {
+	var filters []Filter
+	filters = append(filters, &LogFilter{1})
+	filters = append(filters, &LogFilter{2})
+	filters = append(filters, &LogFilter{3})
+	// filters = append(filters, &LogFilter{33}) // try this
+	filters = append(filters, &LogFilter{4})
+	filters = append(filters, &LogFilter{5})
+
+	chain := NewFilterChain(filters, func(ctx *Context) {
+		log.Println("----simulate servlet --------", ctx.name)
+	})
+
+	chain.DoFilter(&Context{"this a virtual ctx"})
+
 }
